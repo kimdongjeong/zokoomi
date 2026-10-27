@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>진로스케치 (Career Sketch) - 나만의 성격 & 직업 단짝 찾기</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Radar Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti for Celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Pretendard Substitute (Noto Sans KR) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#4A90E2',
+                            mint: '#50E3C2',
+                            yellow: '#F5A623',
+                            purple: '#8E44AD',
+                            coral: '#FF6B6B',
+                            dark: '#2C3E50',
+                            bg: '#F8F9FA'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #F8F9FA;
+            color: #2C3E50;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Neumorphism & Soft Shadows */
+        .soft-card {
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border-radius: 20px;
+        }
+
+        .soft-button {
+            transition: all 0.2s ease;
+        }
+
+        .soft-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        /* Stamp Effect Animation */
+        @keyframes stampAnim {
+            0% { transform: scale(3) rotate(-15deg); opacity: 0; }
+            80% { transform: scale(0.9) rotate(-15deg); opacity: 1; }
+            100% { transform: scale(1) rotate(-15deg); opacity: 0.9; }
+        }
+
+        .stamp-badge {
+            animation: stampAnim 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Fade/Slide Animations */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Print styling for PDF/Counseling export */
+        @media print {
+            body { background: white; color: black; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .soft-card { box-shadow: none; border: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm no-print">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="app.navTo('home')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-blue to-brand-mint flex items-center justify-center text-white text-xl font-bold shadow-md">
+                    <i class="fa-solid fa-compass"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-gray-800">진로스케치</h1>
+                    <p class="text-xs text-gray-400 font-medium">고등학생 멀티 성격 & 진로 탐색</p>
+                </div>
+            </div>
+            
+            <!-- User Short Profile & Reset Button -->
+            <div class="flex items-center gap-2">
+                <button onclick="app.showResetModal()" class="text-xs text-gray-400 hover:text-red-500 p-2 rounded-lg transition-colors flex items-center gap-1" title="데이터 초기화">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span class="hidden sm:inline">초기화</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full">
+
+        <!-- ================= PAGE 1: HOME / DASHBOARD ================= -->
+        <section id="page-home" class="space-y-6 fade-in">
+            <!-- Student Profile Input Banner -->
+            <div class="soft-card p-6 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 opacity-15 text-9xl">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div class="relative z-10 space-y-4">
+                    <div class="inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md">
+                        ✨ 나만의 성격 & 진로 단짝 찾기
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold leading-snug">
+                        5가지 흥미 테스트로 완벽 분석하는<br/>나만의 미래 가이드
+                    </h2>
+                    <p class="text-white/80 text-xs sm:text-sm max-w-xl">
+                        지루한 검사는 그만! 퀴즈 풀듯 즐겁게 참여하고, 나의 숨겨진 강점과 딱 맞는 대학 학과/직업을 확인해보세요.
+                    </p>
+
+                    <!-- Profile Inputs -->
+                    <div class="pt-2 flex flex-wrap sm:flex-nowrap gap-3 items-center max-w-lg">
+                        <div class="w-1/3 min-w-[100px]">
+                            <label class="block text-xs font-medium text-white/80 mb-1">학번/학년반</label>
+                            <input type="text" id="input-student-id" placeholder="예: 20301" 
+                                class="w-full px-3 py-2 text-sm rounded-xl bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50">
+                        </div>
+                        <div class="flex-1 min-w-[140px]">
+                            <label class="block text-xs font-medium text-white/80 mb-1">이름</label>
+                            <input type="text" id="input-student-name" placeholder="이름을 입력하세요" 
+                                class="w-full px-3 py-2 text-sm rounded-xl bg-white/10 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Tracker -->
+            <div class="soft-card p-5 space-y-3">
+                <div class="flex justify-between items-center text-sm">
+                    <span class="font-bold text-gray-700 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-brand-blue"></i>
+                        테스트 진행 현황
+                    </span>
+                    <span class="font-bold text-brand-blue" id="progress-text">0 / 5 완료</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                    <div id="progress-bar" class="bg-gradient-to-r from-brand-blue to-brand-mint h-3 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                </div>
+                <!-- Final Result Button Container -->
+                <div id="final-report-btn-container" class="pt-2 hidden">
+                    <button onclick="app.navTo('report')" class="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-lg"></i>
+                        <span>종합 진로 리포트 확인하기</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5 Test Catalog Cards -->
+            <div class="space-y-3">
+                <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-cubes text-brand-yellow"></i>
+                    성격 검사 테마 (총 5개)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="test-cards-container">
+                    <!-- Cards will be populated by JS -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ================= PAGE 2: TEST RUNNER ================= -->
+        <section id="page-test" class="hidden space-y-6 fade-in max-w-2xl mx-auto">
+            <!-- Test Top Bar -->
+            <div class="soft-card p-4 flex items-center justify-between">
+                <button onclick="app.navTo('home')" class="text-sm font-semibold text-gray-500 hover:text-gray-800 flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-left"></i> 목록으로
+                </button>
+                <div class="text-center">
+                    <span id="test-title-badge" class="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-50 text-brand-blue border border-blue-100">
+                        테스트 1
+                    </span>
+                </div>
+                <span id="question-step" class="text-xs font-bold text-gray-400">Q1 / 4</span>
+            </div>
+
+            <!-- Progress in current test -->
+            <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                <div id="test-progress-bar" class="bg-brand-blue h-1.5 rounded-full transition-all duration-300" style="width: 25%"></div>
+            </div>
+
+            <!-- Question Box -->
+            <div class="soft-card p-6 sm:p-8 space-y-6 relative overflow-hidden">
+                <div id="question-category" class="text-xs font-bold text-brand-mint uppercase tracking-wider">
+                    행동 양식
+                </div>
+                <h3 id="question-text" class="text-lg sm:text-xl font-bold text-gray-800 leading-snug min-h-[56px] flex items-center">
+                    질문 내용이 이곳에 표시됩니다.
+                </h3>
+
+                <!-- Choices -->
+                <div class="space-y-3 pt-2" id="choices-container">
+                    <!-- Choice buttons will be injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Nav Controls -->
+            <div class="flex justify-between items-center px-2">
+                <button id="btn-prev-q" onclick="app.prevQuestion()" class="px-4 py-2 text-sm font-semibold text-gray-500 hover:text-gray-800 disabled:opacity-30 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-chevron-left mr-1"></i> 이전
+                </button>
+                <span class="text-xs text-gray-400">선택하면 자동으로 다음 질문으로 이동합니다.</span>
+            </div>
+        </section>
+
+
+        <!-- ================= PAGE 3: COMPREHENSIVE REPORT ================= -->
+        <section id="page-report" class="hidden space-y-6 fade-in">
+            
+            <!-- Report Card Container for Export/Print -->
+            <div id="printable-report" class="space-y-6">
+                
+                <!-- Report Header / Profile -->
+                <div class="soft-card p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-96 h-96 bg-brand-blue/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-brand-mint/20 text-brand-mint text-xs font-bold px-3 py-1 rounded-full border border-brand-mint/30">
+                                    종합 진로 스케치 분석서
+                                </span>
+                                <span class="text-xs text-slate-400" id="report-date">2026.10.27</span>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-3">
+                                    <span id="report-student-name">학생</span>
+                                    <span class="text-xs text-slate-400 font-normal border border-slate-700 px-2.5 py-1 rounded-lg" id="report-student-id">학번 미입력</span>
+                                </h2>
+                                <p id="report-character-title" class="text-lg sm:text-xl font-bold text-brand-yellow mt-2">
+                                    "자유로운 아이디어형 해결사"
+                                </p>
+                            </div>
+                            <p id="report-character-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+                                성격 요약 설명이 생성됩니다.
+                            </p>
+                        </div>
+
+                        <!-- Badge Illustration / Icon -->
+                        <div class="flex-shrink-0 flex flex-col items-center justify-center p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
+                            <div id="report-main-avatar" class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-tr from-brand-blue to-brand-mint flex items-center justify-center text-4xl text-white shadow-xl mb-2">
+                                💡
+                            </div>
+                            <span class="text-xs font-bold text-slate-300" id="report-main-type-tag">아이디어형</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-Column Section: Personality Radar + Traits -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Radar Chart Card -->
+                    <div class="soft-card p-6 flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-base mb-1 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-radar text-brand-blue"></i>
+                                4가지 종합 심리 척도
+                            </h3>
+                            <p class="text-xs text-gray-500 mb-4">5가지 검사 결과를 종합 계산한 성향 지표입니다.</p>
+                        </div>
+                        <div class="w-full h-64 flex items-center justify-center">
+                            <canvas id="personalityRadarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Personality Traits Detail Card -->
+                    <div class="soft-card p-6 space-y-4 flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-base mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-brand-purple"></i>
+                                세부 성향 스펙트럼
+                            </h3>
+                            <div class="space-y-3" id="spectrum-bars">
+                                <!-- Spectrum bars will be injected -->
+                            </div>
+                        </div>
+                        <div class="p-3 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-3">
+                            <i class="fa-solid fa-lightbulb text-amber-500 mt-1"></i>
+                            <div class="text-xs text-amber-900">
+                                <span class="font-bold">강점 요약:</span>
+                                <span id="report-strength-text">새로운 해결책을 찾아내는 순발력과 공감 능력이 뛰어납니다.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Career Recommendations (Jobs & Majors) -->
+                <div class="soft-card p-6 sm:p-8 space-y-6">
+                    <div class="border-b border-gray-100 pb-4">
+                        <h3 class="font-extrabold text-xl text-gray-800 flex items-center gap-2">
+                            <i class="fa-solid fa-briefcase text-brand-blue"></i>
+                            맞춤 추천 직업 & 계열/학과
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-1">성격 유형 분석을 통해 추출된 최적의 진로 매칭 목록입니다.</p>
+                    </div>
+
+                    <!-- Jobs Grid -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">추천 직업 (TOP 3)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="recommended-jobs-container">
+                            <!-- Job Cards -->
+                        </div>
+                    </div>
+
+                    <!-- Majors Grid -->
+                    <div class="space-y-3 pt-2">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">추천 대학 학과 & 계열</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="recommended-majors-container">
+                            <!-- Major Cards -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Learning & Interpersonal Relationships -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Study Tips -->
+                    <div class="soft-card p-6 space-y-3">
+                        <h3 class="font-bold text-gray-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-book-open text-emerald-500"></i>
+                            나에게 맞는 추천 학습 전략
+                        </h3>
+                        <ul class="text-xs text-gray-650 space-y-2 pl-1" id="study-tips-list">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+
+                    <!-- Chemistry & Social Style -->
+                    <div class="soft-card p-6 space-y-3">
+                        <h3 class="font-bold text-gray-800 text-base flex items-center gap-2">
+                            <i class="fa-solid fa-user-group text-rose-500"></i>
+                            친구 단짝 케미 & 대인관계
+                        </h3>
+                        <div class="space-y-2 text-xs" id="chemistry-container">
+                            <!-- Injected -->
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- End Printable Area -->
+
+            <!-- Actions Bar (No Print) -->
+            <div class="soft-card p-4 no-print flex flex-wrap gap-3 items-center justify-between">
+                <button onclick="app.navTo('home')" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs sm:text-sm rounded-xl transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-house"></i> 메인으로
+                </button>
+
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="app.copyCounselingText()" class="px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-brand-purple font-bold text-xs sm:text-sm rounded-xl border border-purple-200 transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-file-lines"></i>
+                        <span>선생님 제출용 요약 복사</span>
+                    </button>
+                    
+                    <button onclick="app.shareLink()" class="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-brand-blue font-bold text-xs sm:text-sm rounded-xl border border-blue-200 transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span>결과 공유</span>
+                    </button>
+
+                    <button onclick="window.print()" class="px-4 py-2.5 bg-gradient-to-r from-brand-blue to-indigo-600 text-white font-bold text-xs sm:text-sm rounded-xl shadow transition-transform hover:-translate-y-0.5 flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i>
+                        <span>PDF / 인쇄 저장</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-100 py-4 text-center text-xs text-gray-400 no-print mt-10">
+        <p>© 2026 진로스케치 (Career Sketch) | High School Career Counseling Helper</p>
+    </footer>
+
+
+    <!-- MODAL 1: Test Result Mini Popup -->
+    <div id="modal-test-complete" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 soft-card fade-in">
+            <div class="relative inline-block">
+                <div id="popup-stamp-badge" class="w-24 h-24 rounded-full bg-gradient-to-tr from-brand-yellow to-amber-400 text-white font-black text-3xl flex items-center justify-center mx-auto shadow-lg stamp-badge border-4 border-white">
+                    완료!
+                </div>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-xl font-bold text-gray-800" id="popup-test-title">테스트 완료</h3>
+                <p class="text-xs text-gray-500" id="popup-test-summary">테스트 도장이 찍혔습니다!</p>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-xl text-left space-y-1">
+                <span class="text-[10px] font-bold text-brand-blue uppercase">획득한 특성 뱃지</span>
+                <p class="text-xs font-bold text-gray-700" id="popup-trait-tag">#신중한_분석가</p>
+            </div>
+            <button onclick="app.closeCompleteModal()" class="w-full py-3 bg-brand-blue hover:bg-blue-600 text-white font-bold text-sm rounded-xl shadow-md transition-all">
+                다음 테스트하러 가기
+            </button>
+        </div>
+    </div>
+
+
+    <!-- MODAL 2: Reset Confirmation Modal -->
+    <div id="modal-reset" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center space-y-4 soft-card fade-in">
+            <div class="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-gray-800">모든 진행 데이터 초기화</h3>
+                <p class="text-xs text-gray-500 mt-1">저장된 테스트 답안과 결과가 삭제됩니다.<br/>정말 다시 시작하시겠습니까?</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button onclick="app.hideResetModal()" class="py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl">
+                    취소
+                </button>
+                <button onclick="app.confirmReset()" class="py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold text-xs rounded-xl">
+                    초기화하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Custom Toast Notice -->
+    <div id="toast-msg" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2.5 rounded-xl text-xs font-medium shadow-xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-2">
+        <i class="fa-solid fa-check text-brand-mint"></i>
+        <span id="toast-text">메시지 내용</span>
+    </div>
+
+
+    <!-- APPLICATION LOGIC SCRIPT -->
+    <script>
+        /**
+         * 5가지 테스트 질문 및 진로 추천 데이터 구조
+         */
+        const TEST_DATA = [
+            {
+                id: 1,
+                title: "1. 혈액형/MBTI 스파이시 테스트",
+                subtitle: "조별 과제 & 축제 상황 일처리 방식",
+                time: "약 2분",
+                icon: "fa-fire-flame-curved",
+                color: "from-rose-500 to-pink-500",
+                badge: "행동 양식",
+                questions: [
+                    {
+                        q: "축제 부스 준비 첫날! 조장이 되어 역할을 나눌 때 나의 모습은?",
+                        options: [
+                            { text: "A. 각자 잘하는 일과 담당 구역을 깔끔하게 계획표로 짜서 분담시킨다.", scores: { E: 2, N: 0, T: 3, J: 3 } },
+                            { text: "B. 일단 하고 싶은 걸 분위기 있게 물어보고 자율적으로 나누도록 이끈다.", scores: { E: 3, N: 2, F: 2, J: 0 } },
+                            { text: "C. 구체적인 일 목록보다 신선하고 톡톡 튀는 아이디어를 내는 데 집중한다.", scores: { I: 0, N: 3, F: 1, J: 0 } },
+                            { text: "D. 조용히 맡겨진 내 분량을 실수 없이 빠르게 끝내는 편이다.", scores: { I: 3, S: 3, T: 1, J: 2 } }
+                        ]
+                    },
+                    {
+                        q: "조별 과제 제출 전날, 조원이 자기 몫의 자료 조사를 엉망으로 해왔다면?",
+                        options: [
+                            { text: "A. 문제점을 정확히 지적하고 언제까지 다시 수정해오라고 단호하게 전달한다.", scores: { E: 1, S: 1, T: 4, J: 2 } },
+                            { text: "B. 속으로는 화나지만 조원 기분이 상할까 봐 말 돌려 돌려 조언한다.", scores: { I: 1, S: 0, F: 4, J: 1 } },
+                            { text: "C. 답답해서 그냥 내가 오늘 밤새워서 깔끔하게 새로 고쳐 버린다.", scores: { I: 2, S: 2, T: 2, J: 3 } },
+                            { text: "D. 일단 남은 시간 동안 같이 머리 맞대고 으쌰으쌰 재밌게 다듬어본다.", scores: { E: 3, N: 2, F: 2, J: 0 } }
+                        ]
+                    },
+                    {
+                        q: "갑자기 원래 계획했던 행사 일정이 당일 취소되어 공백 시간이 생겼다면?",
+                        options: [
+                            { text: "A. 플랜B를 즉석에서 인공지능처럼 신속하게 가동한다.", scores: { E: 1, S: 2, T: 3, J: 3 } },
+                            { text: "B. 오히려 좋아! 근처 맛집이나 재미있는 곳으로 신나게 길을 틀어 즐긴다.", scores: { E: 3, N: 2, F: 1, J: 0 } },
+                            { text: "C. 갑작스러운 변화에 머리가 복잡해져서 일단 조용히 동태를 파악한다.", scores: { I: 3, S: 2, T: 1, J: 1 } },
+                            { text: "D. 모두가 당황하지 않게 재치있는 농담으로 분위기를 가볍게 풀어준다.", scores: { E: 2, N: 2, F: 3, J: 0 } }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "2. 무인도 생존 아바타 테스트",
+                subtitle: "위기 상황 리더십 & 문제 해결 스타일",
+                time: "약 2분",
+                icon: "fa-compass-drafting",
+                color: "from-amber-500 to-orange-500",
+                badge: "문제 해결",
+                questions: [
+                    {
+                        q: "무인도에 불시착하자마자 내가 가장 먼저 챙기거나 행동하는 것은?",
+                        options: [
+                            { text: "A. 현재 남아있는 물자/식량을 정확히 파악하고 보관 대책을 세운다.", scores: { I: 1, S: 4, T: 2, J: 3 } },
+                            { text: "B. 섬 전체 지형을 파악하기 위해 높은 산이나 언덕으로 수색하러 올라간다.", scores: { E: 2, N: 3, T: 1, J: 1 } },
+                            { text: "C. 멘붕에 빠진 사람들을 다독이고 사기를 북돋아 준다.", scores: { E: 3, N: 1, F: 4, J: 0 } },
+                            { text: "D. 나뭇가지와 돌을 이용해 즉석 생존 도구나 쉼터를 만들어본다.", scores: { I: 2, S: 3, T: 2, J: 1 } }
+                        ]
+                    },
+                    {
+                        q: "구조대가 오려면 일주일은 걸릴 듯하다. 당장 필요한 집단 규칙을 정할 때?",
+                        options: [
+                            { text: "A. 각자의 역할(불번초, 탐색, 요리)을 철저히 배분하고 규율을 강조한다.", scores: { E: 1, S: 3, T: 3, J: 4 } },
+                            { text: "B. 모두의 의견을 공평하게 듣고 합의해서 평화롭게 규칙을 정한다.", scores: { I: 1, S: 1, F: 4, J: 1 } },
+                            { text: "C. 굳이 매여있는 규칙보다는 그때그때 상황에 맞춰 융통성 있게 움직인다.", scores: { E: 2, N: 3, F: 1, J: 0 } },
+                            { text: "D. 가장 효율적인 자원 사용법과 수난 구조 신호 시스템을 설계한다.", scores: { I: 2, N: 2, T: 4, J: 2 } }
+                        ]
+                    },
+                    {
+                        q: "음식 자원이 부족해 사람 간 갈등이 생겼을 때 나의 대처법은?",
+                        options: [
+                            { text: "A. 객관적인 공여도와 신체 기준에 따라 논리적 배분 기준을 제안한다.", scores: { E: 0, S: 2, T: 4, J: 2 } },
+                            { text: "B. 서로 마음이 상하지 않도록 감정적 대화를 중재하며 나눈다.", scores: { E: 2, N: 1, F: 4, J: 1 } },
+                            { text: "C. 내가 새로운 식량 자원(열매, 물고기)을 찾아내 해결한다.", scores: { E: 3, N: 3, T: 1, J: 0 } },
+                            { text: "D. 조용히 내 몫을 조금 양보하며 분위기가 진정될 때까지 기다린다.", scores: { I: 4, S: 1, F: 2, J: 1 } }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 3,
+                title: "3. 색상/음식 취향 성격 테스트",
+                subtitle: "감성 & 선호 학습/작업 환경 분석",
+                time: "약 2분",
+                icon: "fa-palette",
+                color: "from-emerald-500 to-teal-500",
+                badge: "감성 & 환경",
+                questions: [
+                    {
+                        q: "시험 기간, 내 집중력이 최고조로 오르는 최적의 공부 장소는?",
+                        options: [
+                            { text: "A. 조용하고 잔잔한 음악이 흐르는 감성 개인 스터디 카페", scores: { I: 3, S: 1, F: 2, J: 1 } },
+                            { text: "B. 여러 사람의 열기가 느껴지는 도서관 열람실이나 교실", scores: { E: 3, S: 2, T: 1, J: 2 } },
+                            { text: "C. 정돈된 내 방 책상, 내가 지정해둔 타임테이블 앞", scores: { I: 2, S: 3, T: 1, J: 4 } },
+                            { text: "D. 약간의 백색소음이 있는 분위기 좋은 카페 창가 자리", scores: { E: 2, N: 3, F: 1, J: 0 } }
+                        ]
+                    },
+                    {
+                        q: "내가 좋아하는 인테리어/색상 스타일과 방 정리 방식은?",
+                        options: [
+                            { text: "A. 칼각 정리! 모든 물건이 위치에 딱 들어맞는 모던 블랙&화이트", scores: { I: 1, S: 3, T: 3, J: 4 } },
+                            { text: "B. 따뜻한 우드 톤, 감성 스티커와 내 취향 아이템이 가득한 포근함", scores: { I: 2, N: 2, F: 3, J: 0 } },
+                            { text: "C. 비비드하고 생기 넘치는 컬러감! 매번 기분에 따라 구조를 바꿈", scores: { E: 3, N: 3, F: 1, J: 0 } },
+                            { text: "D. 깔끔함 위주로 최소한의 물건만 둔 실용성 위주 스타일", scores: { I: 2, S: 3, T: 2, J: 2 } }
+                        ]
+                    },
+                    {
+                        q: "머리가 머뭇거리고 스트레스가 쌓일 때 찾는 나만의 음식은?",
+                        options: [
+                            { text: "A. 친구들과 다 함께 시끌벅적하게 먹는 매콤한 떡볶이나 치킨", scores: { E: 4, N: 0, F: 2, J: 0 } },
+                            { text: "B. 혼자 조용히 즐기는 단 맛 가득 디저트와 깔끔한 음료", scores: { I: 3, S: 1, F: 3, J: 1 } },
+                            { text: "C. 맛과 영양 성분이 모두 검증된 건강하고 기분 깔끔한 신선식", scores: { I: 1, S: 3, T: 3, J: 2 } },
+                            { text: "D. SNS에서 핫한 새로 나온 신상 메뉴/독특한 가공 요리", scores: { E: 2, N: 4, F: 1, J: 0 } }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "4. 학급 덕목 & SNS 소통 테스트",
+                subtitle: "대인관계 패턴 & 에너지 발산 방향",
+                time: "약 2분",
+                icon: "fa-comments",
+                color: "from-sky-500 to-indigo-500",
+                badge: "대인 관계",
+                questions: [
+                    {
+                        q: "친구들과 단체 대화방(카톡/디스코드 등)에서 나의 소통 유형은?",
+                        options: [
+                            { text: "A. 재밌는 밈이나 짤을 공유하고 분위기를 흥미롭게 주도한다.", scores: { E: 4, N: 2, F: 1, J: 0 } },
+                            { text: "B. 친구들의 이야기에 공감하며 리액션과 맞장구를 진심으로 쳐준다.", scores: { E: 2, N: 1, F: 4, J: 0 } },
+                            { text: "C. 핵심 질문이나 약속 정할 때 딱 깔끔하게 답장하고 관망한다.", scores: { I: 3, S: 3, T: 3, J: 2 } },
+                            { text: "D. 필요한 정보나 일정 공지, 링크 등을 잘 정리해서 알려준다.", scores: { I: 1, S: 2, T: 2, J: 4 } }
+                        ]
+                    },
+                    {
+                        q: "반에서 친구가 우울하다며 찾아와 고민을 터놓았을 때 나의 첫 마디는?",
+                        options: [
+                            { text: "A. \"헐 무슨 일이야 ㅠㅠ 너무 속상했겠다... 괜찮아?\"", scores: { E: 2, N: 0, F: 4, J: 0 } },
+                            { text: "B. \"원인이 뭐야? 그 상황에서 어떻게 된 건지 차근차근 말해봐.\"", scores: { I: 1, S: 2, T: 4, J: 1 } },
+                            { text: "C. \"기분 전환하러 일단 맛있는 거 먹거나 바람 쐬러 나가자!\"", scores: { E: 3, N: 2, F: 2, J: 0 } },
+                            { text: "D. \"내가 도와줄 수 있는 현실적인 방법이 있는지 찾아볼게.\"", scores: { I: 2, S: 2, T: 3, J: 2 } }
+                        ]
+                    },
+                    {
+                        q: "나를 대표하는 학급에서의 대표 덕목 스티커를 뽑는다면?",
+                        options: [
+                            { text: "A. [유쾌함] 어디서나 웃음과 에너지를 불어넣는 인간 비타민", scores: { E: 4, N: 1, F: 2, J: 0 } },
+                            { text: "B. [신뢰성] 맡은 일은 빈틈없이 해내는 든든한 해결사", scores: { I: 1, S: 3, T: 3, J: 4 } },
+                            { text: "C. [창의성] 남들이 생각지 못한 새로운 아이디어를 내는 천재", scores: { I: 1, N: 4, T: 1, J: 0 } },
+                            { text: "D. [배려심] 타인의 마음을 누구보다 따뜻하게 보듬는 힐러", scores: { I: 2, N: 1, F: 4, J: 1 } }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 5,
+                title: "5. 미래 나의 하루 직장 생활 테스트",
+                subtitle: "직업 가치관 & 선호 일하는 방식",
+                time: "약 2분",
+                icon: "fa-building-user",
+                color: "from-purple-500 to-violet-600",
+                badge: "직업 가치관",
+                questions: [
+                    {
+                        q: "내가 생각하는 이상적인 내 미래 직장 환경은?",
+                        options: [
+                            { text: "A. 자율적인 출퇴근, 창의성을 마음껏 발휘할 수 있는 쾌적한 오피스", scores: { E: 1, N: 3, F: 1, J: 0 } },
+                            { text: "B. 체계적인 프로세스와 안정성이 보장된 우수한 조직", scores: { I: 1, S: 4, T: 2, J: 4 } },
+                            { text: "C. 다양한 분야 사람들과 끊임없이 커뮤니케이션하고 이동하는 환경", scores: { E: 4, N: 1, F: 2, J: 0 } },
+                            { text: "D. 깊이 있는 전문 지식을 활용해 전문적인 연구/분석을 수행하는 공간", scores: { I: 4, S: 1, T: 4, J: 2 } }
+                        ]
+                    },
+                    {
+                        q: "일할 때 나에게 가장 보람을 주는 최고의 가치는?",
+                        options: [
+                            { text: "A. 명확한 수치나 성과로 확실하게 인정받고 성장하는 보상", scores: { E: 2, S: 2, T: 4, J: 2 } },
+                            { text: "B. 내 사회적 영향력으로 사람들의 삶이 긍정적으로 변화하는 것", scores: { E: 2, N: 2, F: 4, J: 0 } },
+                            { text: "C. 누구의 터치 없이 내 아이디어와 창작물을 자유롭게 완성하는 것", scores: { I: 3, N: 4, F: 1, J: 0 } },
+                            { text: "D. 규칙적이고 안정된 삶 속에서 일과 삶의 균형(워라밸)을 이루는 것", scores: { I: 2, S: 3, F: 1, J: 3 } }
+                        ]
+                    },
+                    {
+                        q: "프로젝트 진행 시 나와 가장 잘 맞는 업무 방식은?",
+                        options: [
+                            { text: "A. 체크리스트와 일정표에 맞춰 착착 단계를 진행하는 방식", scores: { I: 1, S: 3, T: 1, J: 4 } },
+                            { text: "B. 브레인스토밍을 통해 자유롭게 이런저런 시도를 해보는 방식", scores: { E: 2, N: 4, F: 1, J: 0 } },
+                            { text: "C. 동료들과 협력하고 원활하게 소통하며 맞춰가는 팀플레이 방식", scores: { E: 3, N: 0, F: 4, J: 1 } },
+                            { text: "D. 데이터와 이론적 근거를 바탕으로 논리적 오류를 없애는 방식", scores: { I: 3, S: 2, T: 4, J: 2 } }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        /**
+         * 성격 종합 매칭 알고리즘용 캐릭터 & 직업 DB
+         */
+        const CAREER_MATCH_DATABASE = {
+            "NT": { // 분석 & 창의 (Analyst & Innovator)
+                title: "논리적인 아이디어 메이커, 팩트폭격 창의주의자",
+                avatar: "💡",
+                tag: "전략적 혁신가",
+                desc: "호기심이 풍부하고 논리적 사고에 능합니다. 복잡한 문제를 해결하고 새로운 시스템을 기획하는 데 탁월한 능력을 발휘합니다.",
+                strength: "원인을 빠르게 분석하고, 창의적이면서도 독창적인 대안을 도출하는 지적 순발력이 뛰어납니다.",
+                jobs: [
+                    { title: "AI/데이터 데이터 분석가", desc: "데이터 속 패턴을 분석해 통찰을 도출하고 모델 설계", skill: "수리적 사고, 데이터 분석, 문제해결력" },
+                    { title: "소프트웨어 개발자/기획자", desc: "사용자 니즈를 반영한 프로그램 및 서비스 알고리즘 개발", skill: "논리력, 코딩 사고력, 시스템 설계" },
+                    { title: "경영 및 전략 컨설턴트", desc: "기업의 문제점을 진단하고 발전 전략 제안", skill: "논리적 비판력, 시장분석, 프레젠테이션" }
+                ],
+                majors: [
+                    { name: "컴퓨터공학과 / AI융합학과", desc: "SW 개발, 인공지능, 빅데이터, 네트워크 학습", field: "공학계열" },
+                    { name: "산업공학과 / 경영정보학과", desc: "시스템 최적화, 데이터 기반 의사결정 연구", field: "공학/사회계열" },
+                    { name: "통계학과 / 데이터사이언스학과", desc: "수리 통계 및 데이터 처리 기법 분석", field: "자연과학계열" }
+                ],
+                studyTip: [
+                    "무작정 암기하기보다는 개념의 이유와 원리를 파악할 때 기억에 오래 남습니다.",
+                    "단원별 마인드맵을 그리거나 문제의 구조를 유형별로 분류해보세요."
+                ],
+                chemistry: {
+                    best: "따뜻하고 공감력 있는 힐러형 친구 (서로의 시야를 넓혀줌)",
+                    tip: "직설적인 팩트 전달이 가끔 다른 친구에게 상처를 줄 수 있으니 다정한 쿠션 어투를 섞어보세요!"
+                }
+            },
+            "NF": { // 감성 & 독창 (Visionary & Counselor)
+                title: "세상을 따뜻하게 바꾸는 감성 스토리텔러",
+                avatar: "🎨",
+                tag: "공감형 크리에이터",
+                desc: "풍부한 가치관과 공감 능력을 가지고 사람들의 마음을 움직입니다. 표현력이 뛰어나며 자기 주도적인 일에서 빛을 발합니다.",
+                strength: "타인의 감정을 깊이 이해하고, 자신만의 독창적인 가치와 예술적/언어적 감성으로 전달하는 힘이 있습니다.",
+                jobs: [
+                    { title: "미디어 콘텐츠 크리에이터/PD", desc: "대중의 공감을 끌어내는 영상 및 스토리를 기획·제작", skill: "공감 능력, 스토리텔링, 연출력" },
+                    { title: "심리상담사 / 임상심리학자", desc: "사람들의 마음 건강을 케어하고 고민 해결 지원", skill: "경청 능력, 공감력, 인간 이해" },
+                    { title: "브랜드 마케터 / 카피라이터", desc: "사람들의 반응을 이끌어내는 문구와 브랜딩 기획", skill: "트렌드 캐치, 감성 소통, 기획력" }
+                ],
+                majors: [
+                    { name: "미디어커뮤니케이션학과 (신문방송)", desc: "언론, 방송, 영상 콘텐츠, 광고 및 홍보 연구", field: "사회계열" },
+                    { name: "심리학과 / 상담교육학과", desc: "인간 행동과 마음의 작동 기전 및 상담 기법 탐구", field: "인문/사회계열" },
+                    { name: "디자인 조형학과 / 웹툰콘텐츠학과", desc: "시각적 표현, 캐릭터 스토리텔링 및 디자인", field: "예체능계열" }
+                ],
+                studyTip: [
+                    "공부할 때 해당 지식이 실생활이나 사람들에게 어떻게 적용되는지 연결하면 재미가 배가됩니다.",
+                    "스터디 그룹을 통해 친구들과 대화하며 개념을 설명해보는 방식을 추천합니다."
+                ],
+                chemistry: {
+                    best: "계획적이고 꼼꼼한 조력자형 친구 (현실성을 보완해 줌)",
+                    tip: "타인의 감정 변화에 너무 에너지를 쓰지 않도록 나만의 감정 리프레시 시간을 가지세요."
+                }
+            },
+            "SJ": { // 안정 & 실용 (Organizer & Administrator)
+                title: "빈틈없이 완벽한 실력파 든든한 조율사",
+                avatar: "🛡️",
+                tag: "원칙주의 해결사",
+                desc: "책임감이 강하고 규칙과 체계를 존중합니다. 맡은 바를 끝까지 정확하게 해내며 조직에서 없어서는 안 될 신뢰의 아이콘입니다.",
+                strength: "꼼꼼한 디테일 관리, 확실한 시간 관리와 안정적인 과 수행 능력이 최고 장점입니다.",
+                jobs: [
+                    { title: "공공행정 전문가 / 공무원", desc: "사회 및 조직의 제도를 원활하게 운영하고 시민 지원", skill: "규율 준수, 정확성, 행정력" },
+                    { title: "회계사 / 금융 자산관리사", desc: "기업 및 개인의 재무 상태 분석 및 정밀 관리", skill: "수리 정밀성, 분석력, 꼼꼼함" },
+                    { title: "보건의료 전문가 (간호사/약사)", desc: "환자들의 건강 상태를 정밀하게 체크하고 보건 서비스 제공", skill: "책임감, 정밀성, 봉사 정신" }
+                ],
+                majors: [
+                    { name: "행정학과 / 법학과", desc: "공공 정책, 법률 이해, 사회 조직 가이던스 학습", field: "사회계열" },
+                    { name: "경영학과 / 회계세무학과", desc: "기업 자원 관리, 자금 및 재무 회계 분석", field: "사회계열" },
+                    { name: "간호학과 / 보건행정학과", desc: "의학 기초, 보건 간호 실습 및 병원 관리", field: "의학/보건계열" }
+                ],
+                studyTip: [
+                    "플래너를 활용해 일일 학습 분량을 정량적으로 나누어 체크리스트를 지워나가는 학습법이 최고입니다.",
+                    "기출문제를 반복 풀이하며 오답 노트로 구멍을 메우는 정석적인 방식을 활용하세요."
+                ],
+                chemistry: {
+                    best: "톡톡 튀는 아이디어파 친구 (새로운 유연함을 선물해 줌)",
+                    tip: "예상치 못한 변수가 생기더라도 당황하지 않고 융통성을 가지는 연습을 해보세요!"
+                }
+            },
+            "SP": { // 행동 & 순발력 (Action & Performer)
+                title: "에너지 넘치는 현실적인 현장 플레이어",
+                avatar: "⚡",
+                tag: "만능 에너자이저",
+                desc: "순발력이 매우 뛰어나고 현장 감각이 뛰어납니다. 이론보다 직접 체험하고 경험하며 성취감을 느끼는 타입입니다.",
+                strength: "위기 상황에서의 유연한 대처 능력과 관찰력, 뛰어난 실행력이 매력입니다.",
+                jobs: [
+                    { title: "자율자율 창업가 / 프로젝트 매니저", desc: "새로운 사업 아이템을 현장에 빠르게 실행하고 운영", skill: "추진력, 유연성, 위기관리" },
+                    { title: "스포츠 지도자 / 이벤트 기획자", desc: "역동적인 활동과 신체/행사를 기획하고 현장 지휘", skill: "현장 감각, 활력, 순발력" },
+                    { title: "호텔/항공 서비스 매니저", desc: "다양한 고객을 직접 만나며 맞춤형 서비스 현장 지원", skill: "친화력, 상황 대처, 서비스 정신" }
+                ],
+                majors: [
+                    { name: "체육학과 / 스포츠비즈니스학과", desc: "스포츠 과학, 운동 처방 및 스포츠 마케팅", field: "예체능계열" },
+                    { name: "관광경영 / 호텔컨벤션학과", desc: "글로벌 서비스, 관광 상품 개발 및 이벤트 기획", field: "사회계열" },
+                    { name: "응급구조학과 / 소방방재학과", desc: "긴급 상황 대처 및 안전 구조 기술 연마", field: "의료/안전계열" }
+                ],
+                studyTip: [
+                    "긴 시간 앉아있기보다는 45분 집중 15분 휴식 등 포모도로 기법을 적극 활용하세요.",
+                    "직접 쓰거나 말하면서 몸의 감각을 사용하는 액티브 공부법이 유리합니다."
+                ],
+                chemistry: {
+                    best: "체계적인 가이드라인을 주는 친구 (방향성을 잡아줌)",
+                    tip: "장기적인 목표 설정 시 끝까지 마무리를 짓는 작은 집착을 키우면 무적이 됩니다."
+                }
+            }
+        };
+
+
+        /**
+         * APP MAIN CONTROLLER OBJECT
+         */
+        const app = {
+            state: {
+                studentId: "",
+                studentName: "",
+                completedTests: {}, // e.g. { 1: [0, 1, 3], 2: [1, 2, 0] }
+                currentTestId: null,
+                currentQIndex: 0,
+                scores: { E: 0, I: 0, N: 0, S: 0, T: 0, F: 0, J: 0, P: 0 }
+            },
+
+            init: function() {
+                this.loadFromStorage();
+                this.bindEvents();
+                this.renderCatalog();
+                this.updateProgressBar();
+                
+                // Show home page on start
+                this.navTo('home');
+            },
+
+            bindEvents: function() {
+                document.getElementById('input-student-id').addEventListener('input', (e) => {
+                    this.state.studentId = e.target.value.trim();
+                    this.saveToStorage();
+                });
+                document.getElementById('input-student-name').addEventListener('input', (e) => {
+                    this.state.studentName = e.target.value.trim();
+                    this.saveToStorage();
+                });
+            },
+
+            saveToStorage: function() {
+                const dataToSave = {
+                    studentId: this.state.studentId,
+                    studentName: this.state.studentName,
+                    completedTests: this.state.completedTests
+                };
+                localStorage.setItem('career_sketch_data', JSON.stringify(dataToSave));
+            },
+
+            loadFromStorage: function() {
+                const saved = localStorage.getItem('career_sketch_data');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        this.state.studentId = parsed.studentId || "";
+                        this.state.studentName = parsed.studentName || "";
+                        this.state.completedTests = parsed.completedTests || {};
+
+                        document.getElementById('input-student-id').value = this.state.studentId;
+                        document.getElementById('input-student-name').value = this.state.studentName;
+                    } catch(e) {
+                        console.error("Storage load error", e);
+                    }
+                }
+            },
+
+            navTo: function(pageId) {
+                document.getElementById('page-home').classList.add('hidden');
+                document.getElementById('page-test').classList.add('hidden');
+                document.getElementById('page-report').classList.add('hidden');
+
+                const target = document.getElementById(`page-${pageId}`);
+                if (target) {
+                    target.classList.remove('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+
+                if (pageId === 'home') {
+                    this.renderCatalog();
+                    this.updateProgressBar();
+                } else if (pageId === 'report') {
+                    this.renderReport();
+                }
+            },
+
+            renderCatalog: function() {
+                const container = document.getElementById('test-cards-container');
+                container.innerHTML = '';
+
+                TEST_DATA.forEach(test => {
+                    const isDone = !!this.state.completedTests[test.id];
+                    const card = document.createElement('div');
+                    card.className = `soft-card p-5 relative flex flex-col justify-between transition-all hover:shadow-lg border border-transparent ${isDone ? 'bg-emerald-50/50 border-emerald-100' : ''}`;
+
+                    card.innerHTML = `
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-start">
+                                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr ${test.color} text-white flex items-center justify-center text-xl shadow-md">
+                                    <i class="fa-solid ${test.icon}"></i>
+                                </div>
+                                ${isDone ? 
+                                    `<span class="bg-emerald-500 text-white text-xs font-extrabold px-3 py-1 rounded-full shadow-sm flex items-center gap-1">
+                                        <i class="fa-solid fa-check"></i> 완료됨
+                                    </span>` : 
+                                    `<span class="bg-gray-100 text-gray-500 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                        ${test.time}
+                                    </span>`
+                                }
+                            </div>
+                            <div>
+                                <span class="text-[11px] font-bold text-brand-blue uppercase tracking-wider">${test.badge}</span>
+                                <h4 class="font-bold text-gray-800 text-base leading-snug">${test.title}</h4>
+                                <p class="text-xs text-gray-500 mt-1">${test.subtitle}</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-100/80 mt-3 flex justify-between items-center">
+                            <span class="text-xs text-gray-400 font-medium">총 ${test.questions.length}문항</span>
+                            <button onclick="app.startTest(${test.id})" class="px-4 py-2 rounded-xl text-xs font-bold transition-all soft-button ${
+                                isDone ? 'bg-white text-emerald-600 border border-emerald-200 hover:bg-emerald-50' : 'bg-brand-blue hover:bg-blue-600 text-white shadow-md'
+                            }">
+                                ${isDone ? '다시 검사' : '검사 시작'}
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            },
+
+            updateProgressBar: function() {
+                const total = TEST_DATA.length;
+                const doneCount = Object.keys(this.state.completedTests).length;
+                const percentage = Math.round((doneCount / total) * 100);
+
+                document.getElementById('progress-text').innerText = `${doneCount} / ${total} 완료`;
+                document.getElementById('progress-bar').style.width = `${percentage}%`;
+
+                const finalBtnContainer = document.getElementById('final-report-btn-container');
+                if (doneCount === total) {
+                    finalBtnContainer.classList.remove('hidden');
+                } else {
+                    finalBtnContainer.classList.add('hidden');
+                }
+            },
+
+            startTest: function(testId) {
+                this.state.currentTestId = testId;
+                this.state.currentQIndex = 0;
+
+                // Ensure answer array exists
+                if (!this.state.completedTests[testId]) {
+                    this.state.completedTests[testId] = [];
+                }
+
+                this.navTo('test');
+                this.renderQuestion();
+            },
+
+            renderQuestion: function() {
+                const test = TEST_DATA.find(t => t.id === this.state.currentTestId);
+                if (!test) return;
+
+                const qObj = test.questions[this.state.currentQIndex];
+                const totalQ = test.questions.length;
+
+                // Update Header Badges
+                document.getElementById('test-title-badge').innerText = test.title;
+                document.getElementById('question-step').innerText = `Q${this.state.currentQIndex + 1} / ${totalQ}`;
+                document.getElementById('question-category').innerText = test.badge;
+
+                // Test progress bar
+                const testProgress = ((this.state.currentQIndex + 1) / totalQ) * 100;
+                document.getElementById('test-progress-bar').style.width = `${testProgress}%`;
+
+                // Question Text
+                document.getElementById('question-text').innerText = qObj.q;
+
+                // Render Choice Buttons
+                const choicesContainer = document.getElementById('choices-container');
+                choicesContainer.innerHTML = '';
+
+                // Previous selected choice
+                const currentAnswers = this.state.completedTests[this.state.currentTestId] || [];
+                const savedChoiceIdx = currentAnswers[this.state.currentQIndex];
+
+                qObj.options.forEach((opt, idx) => {
+                    const isSelected = savedChoiceIdx === idx;
+                    const btn = document.createElement('button');
+                    btn.className = `w-full text-left p-4 rounded-xl text-xs sm:text-sm font-semibold transition-all soft-button border ${
+                        isSelected 
+                        ? 'bg-blue-500 text-white border-blue-500 shadow-md ring-2 ring-blue-300' 
+                        : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200'
+                    }`;
+
+                    btn.innerHTML = `<span class="inline-block w-6 font-bold ${isSelected ? 'text-white' : 'text-brand-blue'}">${String.fromCharCode(65 + idx)}.</span> ${opt.text}`;
+                    
+                    btn.onclick = () => this.selectAnswer(idx);
+                    choicesContainer.appendChild(btn);
+                });
+
+                // Back Button state
+                document.getElementById('btn-prev-q').disabled = (this.state.currentQIndex === 0);
+            },
+
+            selectAnswer: function(choiceIndex) {
+                const testId = this.state.currentTestId;
+                if (!this.state.completedTests[testId]) {
+                    this.state.completedTests[testId] = [];
+                }
+
+                this.state.completedTests[testId][this.state.currentQIndex] = choiceIndex;
+                this.saveToStorage();
+
+                const test = TEST_DATA.find(t => t.id === testId);
+                if (this.state.currentQIndex < test.questions.length - 1) {
+                    this.state.currentQIndex++;
+                    this.renderQuestion();
+                } else {
+                    // Test Completed
+                    this.finishSingleTest(test);
+                }
+            },
+
+            prevQuestion: function() {
+                if (this.state.currentQIndex > 0) {
+                    this.state.currentQIndex--;
+                    this.renderQuestion();
+                }
+            },
+
+            finishSingleTest: function(test) {
+                this.saveToStorage();
+                
+                // Show Completion Popup
+                document.getElementById('popup-test-title').innerText = `${test.title} 완료!`;
+                document.getElementById('popup-test-summary').innerText = `성공적으로 응답이 기록되었습니다.`;
+                document.getElementById('popup-trait-tag').innerText = `#${test.badge}_도장획득`;
+
+                document.getElementById('modal-test-complete').classList.remove('hidden');
+
+                // Trigger mini confetti
+                try {
+                    confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+                } catch(e){}
+            },
+
+            closeCompleteModal: function() {
+                document.getElementById('modal-test-complete').classList.add('hidden');
+                
+                // Check if all 5 tests are done
+                const doneCount = Object.keys(this.state.completedTests).length;
+                if (doneCount === TEST_DATA.length) {
+                    this.navTo('report');
+                    // Big Celebration Confetti
+                    try {
+                        confetti({ particleCount: 120, spread: 100, origin: { y: 0.5 } });
+                    } catch(e){}
+                } else {
+                    this.navTo('home');
+                }
+            },
+
+            calculateOverallScores: function() {
+                // Reset scores
+                const s = { E: 0, I: 0, N: 0, S: 0, T: 0, F: 0, J: 0, P: 0 };
+
+                TEST_DATA.forEach(test => {
+                    const userAnswers = this.state.completedTests[test.id];
+                    if (userAnswers && Array.isArray(userAnswers)) {
+                        userAnswers.forEach((ansIdx, qIdx) => {
+                            if (ansIdx !== undefined && test.questions[qIdx]) {
+                                const scoresObj = test.questions[qIdx].options[ansIdx].scores;
+                                for (let key in scoresObj) {
+                                    if (s[key] !== undefined) {
+                                        s[key] += scoresObj[key];
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+
+                this.state.scores = s;
+                return s;
+            },
+
+            renderReport: function() {
+                const s = this.calculateOverallScores();
+
+                // 1. Basic Student Info
+                const name = this.state.studentName || "꿈꾸는 고등학생";
+                const id = this.state.studentId || "학번 미입력";
+                document.getElementById('report-student-name').innerText = name;
+                document.getElementById('report-student-id').innerText = id;
+                document.getElementById('report-date').innerText = new Date().toLocaleDateString('ko-KR');
+
+                // 2. Determine Primary Trait Key (e.g. NT, NF, SJ, SP)
+                const nOrS = (s.N >= s.S) ? "N" : "S";
+                const tOrF = (s.T >= s.F) ? "T" : "F";
+                const jOrP = (s.J >= s.P) ? "J" : "P";
+
+                let key = "NT";
+                if (nOrS === "N" && tOrF === "T") key = "NT";
+                else if (nOrS === "N" && tOrF === "F") key = "NF";
+                else if (nOrS === "S" && jOrP === "J") key = "SJ";
+                else key = "SP";
+
+                const profile = CAREER_MATCH_DATABASE[key];
+
+                // 3. Fill Profile Header
+                document.getElementById('report-character-title').innerText = `"${profile.title}"`;
+                document.getElementById('report-character-desc').innerText = profile.desc;
+                document.getElementById('report-main-avatar').innerText = profile.avatar;
+                document.getElementById('report-main-type-tag').innerText = profile.tag;
+                document.getElementById('report-strength-text').innerText = profile.strength;
+
+                // 4. Render Spectrum Bars
+                this.renderSpectrumBars(s);
+
+                // 5. Render Radar Chart
+                this.renderRadarChart(s);
+
+                // 6. Render Recommended Jobs
+                const jobsContainer = document.getElementById('recommended-jobs-container');
+                jobsContainer.innerHTML = '';
+                profile.jobs.forEach(job => {
+                    const card = document.createElement('div');
+                    card.className = "p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-2 flex flex-col justify-between";
+                    card.innerHTML = `
+                        <div>
+                            <span class="text-[10px] font-bold text-brand-blue uppercase bg-blue-50 px-2 py-0.5 rounded">BEST MATCH</span>
+                            <h5 class="font-bold text-gray-800 text-sm mt-1">${job.title}</h5>
+                            <p class="text-xs text-gray-500 mt-1 leading-relaxed">${job.desc}</p>
+                        </div>
+                        <div class="pt-2 border-t border-gray-200/60 text-[11px] text-gray-600">
+                            <span class="font-semibold text-gray-700">필요 역량:</span> ${job.skill}
+                        </div>
+                    `;
+                    jobsContainer.appendChild(card);
+                });
+
+                // 7. Render Recommended Majors
+                const majorsContainer = document.getElementById('recommended-majors-container');
+                majorsContainer.innerHTML = '';
+                profile.majors.forEach(major => {
+                    const card = document.createElement('div');
+                    card.className = "p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100/80 flex items-start gap-3";
+                    card.innerHTML = `
+                        <div class="w-9 h-9 rounded-xl bg-brand-blue text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                            🎓
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-indigo-600 bg-white px-2 py-0.5 rounded border border-indigo-100">${major.field}</span>
+                            <h5 class="font-bold text-gray-800 text-sm mt-0.5">${major.name}</h5>
+                            <p class="text-xs text-gray-500 mt-0.5">${major.desc}</p>
+                        </div>
+                    `;
+                    majorsContainer.appendChild(card);
+                });
+
+                // 8. Study Tips List
+                const studyList = document.getElementById('study-tips-list');
+                studyList.innerHTML = '';
+                profile.studyTip.forEach(tip => {
+                    const li = document.createElement('li');
+                    li.className = "flex items-start gap-2";
+                    li.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500 mt-1 text-xs"></i> <span>${tip}</span>`;
+                    studyList.appendChild(li);
+                });
+
+                // 9. Interpersonal & Chemistry
+                const chemContainer = document.getElementById('chemistry-container');
+                chemContainer.innerHTML = `
+                    <div class="p-3 bg-rose-50 rounded-xl border border-rose-100">
+                        <span class="font-bold text-rose-700">❤️ 찰떡 궁합 단짝 유형:</span>
+                        <p class="text-gray-700 mt-0.5">${profile.chemistry.best}</p>
+                    </div>
+                    <div class="p-3 bg-blue-50 rounded-xl border border-blue-100">
+                        <span class="font-bold text-brand-blue">💡 대인관계 소통 팁:</span>
+                        <p class="text-gray-700 mt-0.5">${profile.chemistry.tip}</p>
+                    </div>
+                `;
+            },
+
+            renderSpectrumBars: function(s) {
+                const container = document.getElementById('spectrum-bars');
+                container.innerHTML = '';
+
+                const pairs = [
+                    { left: "외향 (E)", right: "내향 (I)", scoreL: s.E, scoreR: s.I, color: "bg-blue-500" },
+                    { left: "직관 (N)", right: "현실 (S)", scoreL: s.N, scoreR: s.S, color: "bg-emerald-500" },
+                    { left: "이성 (T)", right: "감성 (F)", scoreL: s.T, scoreR: s.F, color: "bg-purple-500" },
+                    { left: "계획 (J)", right: "자율 (P)", scoreL: s.J, scoreR: s.P, color: "bg-amber-500" }
+                ];
+
+                pairs.forEach(p => {
+                    const total = (p.scoreL + p.scoreR) || 1;
+                    const ratioL = Math.round((p.scoreL / total) * 100);
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = "space-y-1 text-xs";
+                    wrapper.innerHTML = `
+                        <div class="flex justify-between font-bold text-gray-700">
+                            <span>${p.left} ${ratioL}%</span>
+                            <span>${100 - ratioL}% ${p.right}</span>
+                        </div>
+                        <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden flex">
+                            <div class="${p.color} h-full transition-all duration-500" style="width: ${ratioL}%"></div>
+                            <div class="bg-gray-200 h-full flex-1"></div>
+                        </div>
+                    `;
+                    container.appendChild(wrapper);
+                });
+            },
+
+            radarChartInstance: null,
+            renderRadarChart: function(s) {
+                const ctx = document.getElementById('personalityRadarChart').getContext('2d');
+
+                if (this.radarChartInstance) {
+                    this.radarChartInstance.destroy();
+                }
+
+                // Normalize scores for radar
+                const dataValues = [
+                    s.E * 15 + 20,
+                    s.N * 15 + 20,
+                    s.T * 15 + 20,
+                    s.J * 15 + 20,
+                    s.F * 15 + 20,
+                    s.S * 15 + 20
+                ];
+
+                this.radarChartInstance = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['외향성에너지(E)', '창의직관(N)', '논리분석(T)', '계획성(J)', '공감감성(F)', '현실감각(S)'],
+                        datasets: [{
+                            label: '나의 종합 성향',
+                            data: dataValues,
+                            backgroundColor: 'rgba(74, 144, 226, 0.25)',
+                            borderColor: '#4A90E2',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#50E3C2',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: '#4A90E2'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: { color: 'rgba(0,0,0,0.08)' },
+                                grid: { color: 'rgba(0,0,0,0.08)' },
+                                pointLabels: { font: { size: 10, weight: 'bold' }, color: '#475569' },
+                                ticks: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            },
+
+            copyCounselingText: function() {
+                const name = this.state.studentName || "학생";
+                const id = this.state.studentId || "학번미입력";
+                const title = document.getElementById('report-character-title').innerText;
+                const desc = document.getElementById('report-character-desc').innerText;
+
+                const text = `[진로스케치 진로 상담 요약서]\n- 학생명: ${name} (${id})\n- 종합 캐릭터: ${title}\n- 요약: ${desc}\n- 작성일자: ${new Date().toLocaleDateString()}\n* 상세 리포트는 진로스케치 웹앱 결과 화면을 참고하세요.`;
+
+                // Copy to clipboard fallback iframe execution
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    this.showToast('상담용 데이터가 클립보드에 복사되었습니다!');
+                } catch(err) {
+                    this.showToast('복사에 실패했습니다. 수동으로 선택해주세요.');
+                }
+                document.body.removeChild(textarea);
+            },
+
+            shareLink: function() {
+                const dummyUrl = window.location.href;
+                const textarea = document.createElement('textarea');
+                textarea.value = dummyUrl;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    this.showToast('결과 링크가 클립보드에 복사되었습니다!');
+                } catch(e) {
+                    this.showToast('링크 복사에 실패했습니다.');
+                }
+                document.body.removeChild(textarea);
+            },
+
+            showResetModal: function() {
+                document.getElementById('modal-reset').classList.remove('hidden');
+            },
+
+            hideResetModal: function() {
+                document.getElementById('modal-reset').classList.add('hidden');
+            },
+
+            confirmReset: function() {
+                localStorage.removeItem('career_sketch_data');
+                this.state.studentId = "";
+                this.state.studentName = "";
+                this.state.completedTests = {};
+                document.getElementById('input-student-id').value = "";
+                document.getElementById('input-student-name').value = "";
+                
+                this.hideResetModal();
+                this.showToast('모든 데이터가 성공적으로 초기화되었습니다.');
+                this.navTo('home');
+            },
+
+            showToast: function(msg) {
+                const toast = document.getElementById('toast-msg');
+                document.getElementById('toast-text').innerText = msg;
+                toast.classList.remove('opacity-0', 'pointer-events-none');
+                toast.classList.add('opacity-100');
+
+                setTimeout(() => {
+                    toast.classList.remove('opacity-100');
+                    toast.classList.add('opacity-0', 'pointer-events-none');
+                }, 2500);
+            }
+        };
+
+        // Window Load Initialization
+        window.onload = function() {
+            app.init();
+        };
+    </script>
+</body>
+</html>
